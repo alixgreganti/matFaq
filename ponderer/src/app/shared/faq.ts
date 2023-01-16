@@ -1,6 +1,8 @@
 // faq.ts
 // contains the interface for readingdata from slice 52053
 import { getData } from '../shared/datalynk.service';
+var response: any
+
 
 interface FAQ {
   id: number;
@@ -10,7 +12,9 @@ interface FAQ {
   created: Date;
 }
 
-const data: any = getData()
-console.log(data)
+getData().then(data => {
+    let response = data.json()
+})
+
 
 export var faqs: FAQ[];

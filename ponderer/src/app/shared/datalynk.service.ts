@@ -47,10 +47,9 @@ export async function getData() {
   });
   */
 
-  fetch(url, ask)
-    .then((response) => response.text())
-    .then((result) => console.log(answer = result))
+  return fetch(url, ask)
+    .then((response) => answer = response)
+    .then((result) => console.log(result))
     .catch((error) => console.log('error', error));
 
-  return answer;
 }
