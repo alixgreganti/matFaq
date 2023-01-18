@@ -1,12 +1,6 @@
 //datalynk.service.ts
 //Alix Greganti 2023
 
-var raw = JSON.stringify({
-  '$/slice/report': {
-    slice: 52053,
-  },
-});
-
 // A simple service for communicating with public records from a datalynk spoke.
 const url = 'https://api.datalynk.ca';
 
@@ -29,9 +23,14 @@ function getGuestToken() {
     });
 }
 
-export async function getData() {
+export async function getData(slice: number = 52053) {
+  var raw = JSON.stringify({
+    '$/slice/report': {
+      slice: slice,
+    },
+  });
+  
   var ask;
-  var answer;
   await getGuestToken().then((token) => {
     reqHeader.append('Authorization', 'Bearer ' + token);
     ask = {
@@ -41,15 +40,9 @@ export async function getData() {
     };
   });
 
-  /* Displays contents of header
-  reqHeader.forEach((value, key) => {
-    console.log(key + ': ' + value);
-  });
-  */
-
   return fetch(url, ask)
-    .then((response) => answer = response)
-    .then((result) => console.log(result))
+    .then((response) => response.json())
+    .then((data) => {return data})
     .catch((error) => console.log('error', error));
 
 }
