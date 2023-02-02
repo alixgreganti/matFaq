@@ -13,7 +13,7 @@ import { TopHeaderComponent } from './top-header/top-header.component';
     AppComponent,
     FaqContentComponent,
     SidenavComponent,
-    TopHeaderComponent
+    TopHeaderComponent,
   ],
   imports: [
     BrowserModule,

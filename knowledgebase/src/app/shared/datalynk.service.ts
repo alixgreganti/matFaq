@@ -3,10 +3,10 @@
 
 // A simple service for communicating with public records from a datalynk spoke.
 const url = 'https://api.datalynk.ca';
-
 const reqHeader = new Headers();
 reqHeader.append('Realm', 'sandbox'); // Replace sandbox with your spoke
 reqHeader.append('Content-Type', 'application/json'); // Mandatory
+reqHeader.append('Authorization', 'not set')
 
 function getGuestToken() {
   const guestUrl = url + '/guest';
@@ -23,26 +23,32 @@ function getGuestToken() {
     });
 }
 
-export async function getData(slice: number = 52053) {
+export async function getData(slice: number = 52093) {
+  var newHeader = reqHeader;
+  
   var raw = JSON.stringify({
     '$/slice/report': {
       slice: slice,
     },
   });
-  
+
   var ask;
-  await getGuestToken().then((token) => {
-    reqHeader.append('Authorization', 'Bearer ' + token);
-    ask = {
-      method: 'POST',
-      body: raw,
-      headers: reqHeader,
-    };
-  });
+    console.log(newHeader.has('Authorization'))
+    await getGuestToken().then((token) => {
+      newHeader.set('Authorization', 'Bearer ' + token);
+      ask = {
+        method: 'POST',
+        body: raw,
+        headers: newHeader,
+      };
+    });
+
+  console.log(newHeader);
 
   return fetch(url, ask)
     .then((response) => response.json())
-    .then((data) => {return data})
+    .then((data) => {
+      return data;
+    })
     .catch((error) => console.log('error', error));
-
 }

@@ -1,12 +1,23 @@
 import { Component, OnInit } from '@angular/core';
 import { getData } from '../shared/datalynk.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface FAQ {
   // make the interface for the row data
   id: number;
-  Title: string;
-  Category: string;
-  Description: string;
+  title: string;
+  category: string;
+  description: any;
+  steps: any;
+  created: Date;
+}
+
+interface step {
+  // make the interface for the row data
+  id: number;
+  step: string;
+  faq: string;
+  faqID: number;
   created: Date;
 }
 
@@ -15,7 +26,7 @@ interface FAQ {
   template: `
     <div class="row">
       <div class="col-sm-2" id="sideNav">
-        <ng-template [ngIf]="dataLoaded | async">
+        <ng-template [ngIf]="faqLoaded | async">
           <div *ngFor="let category of categories">
             <h3 (click)="filterFaq(category)" class="category">
               {{ category }}
@@ -25,15 +36,24 @@ interface FAQ {
       </div>
 
       <div class="col-sm" id="content">
-        <ng-template [ngIf]="dataLoaded | async" [ngIfElse]="loading" ]>
+        <ng-template [ngIf]="(faqLoaded | async) && (stepsLoaded | async)" [ngIfElse]="loading" ]>
           <div *ngFor="let question of filteredFaqs">
             <div class="card" style="width: 100%;">
               <div class="card-body">
-                <h5 class="card-title">{{ question.Title }}</h5>
+                <h5 class="card-title">{{ question.title }}</h5>
                 <h6 class="card-subtitle mb-2 text-muted">
-                  {{ question.Category }}
+                  {{ question.category }}
                 </h6>
-                <p class="card-text">{{ question.Description }}</p>
+                <div class="card-text">
+                  {{ question.description }}
+
+                  <ul>
+                    <div *ngFor="let step of question.steps">
+                      <li>{{ step.step }}</li>
+                    </div>
+                  </ul>
+
+                </div>
               </div>
             </div>
           </div>
@@ -50,37 +70,62 @@ interface FAQ {
   styleUrls: ['./faq-content.component.scss'],
 })
 export class FaqContentComponent implements OnInit {
-  dataLoaded: Promise<Boolean> = Promise.resolve(false); //Keeps track of when the data is loaded from source
+  faqLoaded: Promise<Boolean> = Promise.resolve(false); //Keeps track of when the data is loaded from source
+  stepsLoaded: Promise<Boolean> = Promise.resolve(false); //Keeps track of when the data is loaded from source
+
   categories: string[] = [];
 
   faqs: Array<FAQ> = [];
+  steps: Array<step> = [];
   filteredFaqs = this.faqs; //by default there is no filter applied
 
-  constructor() {}
+  constructor(private sanitizer: DomSanitizer) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.categories.push('All'); //Adds "All" category
 
-    getData().then((data) => {
-      console.log('Getting data...');
-      data.rows.forEach((item: FAQ) => {
-        // iterate through the row data
-        this.faqs.push({
-          //adds the data taken to faqs using the FAQ interface
-          id: item.id,
-          Title: item.Title,
-          Category: item.Category,
-          Description: item.Description,
-          created: item.created,
-        });
-
-        if (!this.categories.includes(item.Category)) {
-          this.categories.push(item.Category);
-        }
+    await this.getSteps();
+    await this.getFaqs();
+  }
+  
+  private async getSteps(): Promise<void> {
+    console.log('Getting steps...');
+    const data = await getData(52095);
+    data.rows.forEach((item: step) => {
+      console.log(item);
+      this.steps.push({
+        //adds the data taken to faqs using the FAQ interface
+        id: item.id,
+        step: item.step,
+        faq: item.faq,
+        faqID: item.faqID,
+        created: item.created,
       });
-      console.log('Finished getting FAQs');
-      this.dataLoaded = Promise.resolve(true);
     });
+    this.stepsLoaded = Promise.resolve(true);
+  }
+  
+  private async getFaqs(): Promise<void> {
+    console.log('Getting data...');
+    const data = await getData();
+    data.rows.forEach((item: FAQ) => {
+      // iterate through the row data
+      this.faqs.push({
+        //adds the data taken to faqs using the FAQ interface
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        description: item.description,
+        steps: this.steps.filter((step) => step.faqID === item.id),
+        created: item.created,
+      });
+  
+      if (!this.categories.includes(item.category)) {
+        this.categories.push(item.category);
+      }
+    });
+    console.log('Finished getting FAQs');
+    this.faqLoaded = Promise.resolve(true);
   }
 
   filterFaq(category: string) {
@@ -89,7 +134,7 @@ export class FaqContentComponent implements OnInit {
       this.filteredFaqs = this.faqs;
     } else {
       //Set filteredFaqs equal to the faq, filter the faqs by the selected category
-      this.filteredFaqs = this.faqs.filter((faq) => faq.Category === category);
+      this.filteredFaqs = this.faqs.filter((faq) => faq.category === category);
     }
   }
 }
